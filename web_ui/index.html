@@ -1,0 +1,97 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>RAG Chat</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 2rem auto; }
+    textarea { width: 100%; height: 120px; }
+    button { padding: 0.5rem 1rem; }
+    pre { background: #f6f6f6; padding: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>RAG Chat</h1>
+  <p>Run the server: <code>uvicorn rag.api:app --reload --port 8000</code> and open <a href="/">http://localhost:8000/</a>.</p>
+
+  <div style="margin-bottom:1rem">
+    <button id="build">Build index</button>
+    <span id="buildStatus">(unknown)</span>
+  </div>
+
+  <textarea id="query" placeholder="Ask something about the loaded PDFs"></textarea>
+  <div class="row" style="margin-top: 0.5rem">
+    <label>k: <input id="k" value="5" style="width: 4rem" /></label>
+    <button id="ask">Ask</button>
+    <span id="status" style="margin-left: 1rem"></span>
+  </div>
+
+  <h2>Answer</h2>
+  <pre id="answer">(no answer yet)</pre>
+
+  <script>
+    async function getStatus(){
+      try{
+        const r = await fetch('/index-status');
+        if(!r.ok){ throw new Error('status http '+r.status); }
+        const data = await r.json();
+        const el = document.getElementById('buildStatus');
+        if (data.last_build_error){
+          el.textContent = 'error: ' + data.last_build_error;
+        } else if (data.building){
+          el.textContent = 'building...';
+        } else if (data.has_index){
+          el.textContent = 'ready';
+        } else {
+          el.textContent = 'no index';
+        }
+      }catch(e){ document.getElementById('buildStatus').textContent = 'error: ' + e.message; }
+    }
+
+    document.getElementById('ask').addEventListener('click', async () => {
+      document.getElementById('status').textContent = 'Querying...';
+      const query = document.getElementById('query').value;
+      const k = parseInt(document.getElementById('k').value || '5', 10);
+      try{
+        const resp = await fetch('/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query, k })
+        });
+        if (!resp.ok) {
+          const text = await resp.text();
+          document.getElementById('answer').textContent = 'Error: ' + text;
+          document.getElementById('status').textContent = 'error';
+          return;
+        }
+        const data = await resp.json();
+        document.getElementById('answer').textContent = data.answer;
+        document.getElementById('status').textContent = 'done';
+      }catch(e){
+        document.getElementById('answer').textContent = 'Error: '+e.message;
+        document.getElementById('status').textContent = 'error';
+      }
+    });
+
+    document.getElementById('build').addEventListener('click', async () => {
+      document.getElementById('buildStatus').textContent = 'starting...';
+      try{
+        const r = await fetch('/build-index', { method: 'POST' });
+        const j = await r.json();
+        document.getElementById('buildStatus').textContent = j.status + (j.message ? (': '+j.message) : '');
+        // poll until done
+        const poll = setInterval(async ()=>{
+          await getStatus();
+          const s = document.getElementById('buildStatus').textContent;
+          if(!s.includes('building') && !s.includes('starting')){ clearInterval(poll); }
+        }, 2000);
+      }catch(e){ document.getElementById('buildStatus').textContent = 'error'; }
+    });
+
+    // poll initial status
+    getStatus();
+    setInterval(getStatus, 4000);
+  </script>
+</body>
+</html>
+
