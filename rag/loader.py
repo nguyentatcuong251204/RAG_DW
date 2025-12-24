@@ -1,5 +1,5 @@
 from typing import List, Any
-from langchain_community.document_loaders import PyPDFLoader, DirectoryLoader
+from langchain_community.document_loaders import PyMuPDFLoader, PyPDFLoader, DirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from langchain_core.documents import Document
@@ -13,7 +13,7 @@ class DocumentLoader:
         self.chunk_overlap = chunk_overlap
 
     def load_from_dir(self, pdf_dir: str, glob: str = "*.pdf") -> List[Document]:
-        loader = DirectoryLoader(pdf_dir, glob=glob, loader_cls=PyPDFLoader)
+        loader = DirectoryLoader(pdf_dir, glob=glob, loader_cls=PyMuPDFLoader)
         documents = loader.load()
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap
@@ -22,7 +22,7 @@ class DocumentLoader:
         return chunks
 
     def load_single_pdf(self, filepath: str) -> List[Document]:
-        loader = PyPDFLoader(filepath)
+        loader = PyMuPDFLoader(filepath)
         docs = loader.load()
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap
