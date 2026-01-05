@@ -1,0 +1,34 @@
+Columns name	Description	
+Hospital Service Area	"A description of the Health Service Area (HSA) in which the hospital is located. Blank for enhanced de-identification records. Capital/Adirondack, Central NY, Finger Lakes, Hudson Valley, Long Island, New York City, Southern Tier, Western NY."	
+Hospital County	A description of the county in which the hospital is located. Blank for records with enhanced de-identification.	
+Operating Certificate Number	The facility Operating Certificate Number as assigned by NYS Department of Health. Blank for records with enhanced de-identification.	
+Permanent Facility Id	Permanent Facility Identifier. Blank for records with enhanced de-identification.	
+Facility Name	"The name of the facility where services were performed based on the Permanent Facility Identifier (PFI), as maintained by the NYSDOH Division of Health Facility Planning. For records with enhanced de-identification, ‘Redacted for Confidentiality’ appears."	
+Age Group	"Age in years at time of discharge. Grouped into the following age groups: 0 to 17, 18 to 29, 30 to 49, 50 to 69, and 70 or Older."	
+Zip Code - 3 digits	The first three digits of the patient's zip code.	
+Gender	Patient gender.	
+Race	Patient race.	
+Ethnicity	Patient ethnicity.	
+Length of Stay	The total number of patient days at an acute level and/or other than acute care level (excluding leave of absence days).	
+Type of Admission	A description of the manner in which the patient was admitted to the health care facility.	
+Patient Disposition	The patient's destination or status upon discharge.	
+Discharge Year	The year (CCYY) of discharge.	
+CCSR Diagnosis Code	AHRQ Clinical Classification Software Refined (CCSR) Diagnosis Category Code.	
+CCSR Diagnosis Description	AHRQ Clinical Classification Software Refined (CCSR) Diagnosis Category Description.	
+CCSR Procedure Code	AHRQ Clinical Classification Software Refined (CCSR) ICD-10 Procedure Category Code.	
+CCSR Procedure Description	AHRQ Clinical Classification Software Refined (CCSR) ICD-10 Procedure Category Description.	
+APR DRG Code	The All Patients Refined Diagnosis Related Groups (APR-DRG) Classification Code.	
+APR DRG Description	"The APR-DRG Classification Code Description in Calendar Year 2021, Version 38 of the APR- DRG Grouper."	
+APR MDC Code	All Patient Refined Major Diagnostic Category (APR MDC) Code. APR-DRG Codes 001-006 and 950-956 may group to more than one MDC Code.	`1q
+APR MDC Description	All Patient Refined Major Diagnostic Category (APR MDC) Description.	
+APR Severity of Illness Code	"The APR-DRG Severity of Illness Code: 0, 1, 2, 3, 4"	
+APR Severity of Illness Description	All Patient Refined Severity of Illness (APR SOI) Description.	
+APR Risk of Mortality	All Patient Refined Risk of Mortality (APR ROM) Description.	
+APR Medical Surgical Description	"The APR-DRG specific classification of Medical, Surgical or Not Applicable."	
+Payment Typology 1	A description of the type of payment for this occurrence.	
+Payment Typology 2	A description of the type of payment for this occurrence.	
+Payment Typology 3	A description of the type of payment for this occurrence.	
+Birth Weight	The neonate birth weight in grams; rounded to nearest 100 g.	
+Emergency Department Indicator	"The Emergency Department Indicator is set based on the submitted revenue codes. If the record contained an Emergency Department revenue code of 045X, the indicator is set to ""Y"", otherwise it will be “N”."	
+Total Charges	Total charges for the discharge.	
+Total Costs	Total estimated cost for the discharge.	

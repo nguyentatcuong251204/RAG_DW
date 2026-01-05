@@ -2,95 +2,119 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>RAG Chat</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>RAG Chat — Chatbot</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 800px; margin: 2rem auto; }
-    textarea { width: 100%; height: 120px; }
-    button { padding: 0.5rem 1rem; }
-    pre { background: #f6f6f6; padding: 1rem; }
+    :root{ --bg:#f6f8fb; --user:#0b93f6; --assistant:#e5e7eb; --text:#111827 }
+    body{ font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background:var(--bg); margin:0; padding:2rem; display:flex; justify-content:center }
+    .container{ width:100%; max-width:860px; background:#fff; border-radius:12px; box-shadow:0 6px 24px rgba(16,24,40,0.08); overflow:hidden }
+    header{ padding:1rem 1.25rem; border-bottom:1px solid #eee; display:flex; align-items:center; justify-content:space-between }
+    header h1{ margin:0; font-size:1.125rem }
+    .tools{ display:flex; gap:.5rem; align-items:center }
+    .tools button{ padding:.5rem .75rem; border-radius:6px; border:1px solid #e5e7eb; background:#fff; cursor:pointer }
+    main{ padding:1rem; height:520px; display:flex; flex-direction:column }
+    .messages{ flex:1; overflow:auto; padding:1rem; display:flex; flex-direction:column; gap:.75rem }
+    .msg{ max-width:80%; padding:.6rem .8rem; border-radius:10px; line-height:1.4; }
+    .msg.user{ align-self:flex-end; background:linear-gradient(180deg,var(--user),#0a7ad9); color:#fff; border-bottom-right-radius:2px }
+    .msg.assistant{ align-self:flex-start; background:var(--assistant); color:var(--text) }
+    footer{ padding: .75rem; border-top:1px solid #eee; display:flex; gap:.5rem; align-items:center }
+    input[type=text]{ flex:1; padding:.6rem .75rem; border-radius:8px; border:1px solid #e6e9ee }
+    button.send{ padding:.6rem .9rem; border-radius:8px; border:none; background:var(--user); color:#fff; cursor:pointer }
+    .status{ font-size:.875rem; color:#6b7280 }
+    .muted{ color:#6b7280 }
+    .spinner{ width:14px; height:14px; border-radius:50%; border:2px solid #ccc; border-top-color:var(--user); animation:spin .9s linear infinite; display:inline-block; vertical-align:middle }
+    @keyframes spin{ to{ transform:rotate(360deg) } }
   </style>
 </head>
 <body>
-  <h1>RAG Chat</h1>
-  <p>Run the server: <code>uvicorn rag.api:app --reload --port 8000</code> and open <a href="/">http://localhost:8000/</a>.</p>
+  <div class="container" role="main">
+    <header>
+      <h1>RAG Chat</h1>
+      <div class="tools">
+        <button id="build">Build index</button>
+        <div id="buildStatus" class="muted">(unknown)</div>
+      </div>
+    </header>
 
-  <div style="margin-bottom:1rem">
-    <button id="build">Build index</button>
-    <span id="buildStatus">(unknown)</span>
+    <main>
+      <div class="messages" id="messages" aria-live="polite"></div>
+      <div class="status" id="opStatus"></div>
+    </main>
+
+    <footer>
+      <input id="input" type="text" placeholder="Ask anything... e.g. 'What is the average length of stay?'" />
+      <button class="send" id="send">Send</button>
+    </footer>
   </div>
-
-  <textarea id="query" placeholder="Ask something about the loaded PDFs"></textarea>
-  <div class="row" style="margin-top: 0.5rem">
-    <label>k: <input id="k" value="5" style="width: 4rem" /></label>
-    <button id="ask">Ask</button>
-    <span id="status" style="margin-left: 1rem"></span>
-  </div>
-
-  <h2>Answer</h2>
-  <pre id="answer">(no answer yet)</pre>
 
   <script>
+    const messagesEl = document.getElementById('messages');
+    const inputEl = document.getElementById('input');
+    const sendBtn = document.getElementById('send');
+    const buildBtn = document.getElementById('build');
+    const buildStatus = document.getElementById('buildStatus');
+    const opStatus = document.getElementById('opStatus');
+
+    function appendMessage(text, role){
+      const el = document.createElement('div');
+      el.className = 'msg ' + role;
+      el.textContent = text;
+      messagesEl.appendChild(el);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      return el;
+    }
+
     async function getStatus(){
       try{
         const r = await fetch('/index-status');
-        if(!r.ok){ throw new Error('status http '+r.status); }
         const data = await r.json();
-        const el = document.getElementById('buildStatus');
-        if (data.last_build_error){
-          el.textContent = 'error: ' + data.last_build_error;
-        } else if (data.building){
-          el.textContent = 'building...';
-        } else if (data.has_index){
-          el.textContent = 'ready';
-        } else {
-          el.textContent = 'no index';
-        }
-      }catch(e){ document.getElementById('buildStatus').textContent = 'error: ' + e.message; }
+        if (data.last_build_error) buildStatus.textContent = 'error: ' + data.last_build_error;
+        else if (data.building) buildStatus.textContent = 'building...';
+        else if (data.has_index) buildStatus.textContent = 'ready';
+        else buildStatus.textContent = 'no index';
+      }catch(e){ buildStatus.textContent = 'error'; }
     }
 
-    document.getElementById('ask').addEventListener('click', async () => {
-      document.getElementById('status').textContent = 'Querying...';
-      const query = document.getElementById('query').value;
-      const k = parseInt(document.getElementById('k').value || '5', 10);
-      try{
-        const resp = await fetch('/query', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query, k })
-        });
-        if (!resp.ok) {
-          const text = await resp.text();
-          document.getElementById('answer').textContent = 'Error: ' + text;
-          document.getElementById('status').textContent = 'error';
-          return;
-        }
-        const data = await resp.json();
-        document.getElementById('answer').textContent = data.answer;
-        document.getElementById('status').textContent = 'done';
-      }catch(e){
-        document.getElementById('answer').textContent = 'Error: '+e.message;
-        document.getElementById('status').textContent = 'error';
-      }
-    });
-
-    document.getElementById('build').addEventListener('click', async () => {
-      document.getElementById('buildStatus').textContent = 'starting...';
+    async function buildIndex(){
+      buildStatus.textContent = 'starting...';
       try{
         const r = await fetch('/build-index', { method: 'POST' });
         const j = await r.json();
-        document.getElementById('buildStatus').textContent = j.status + (j.message ? (': '+j.message) : '');
-        // poll until done
+        buildStatus.textContent = j.status + (j.message ? ': ' + j.message : '');
+        // poll until finish
         const poll = setInterval(async ()=>{
           await getStatus();
-          const s = document.getElementById('buildStatus').textContent;
-          if(!s.includes('building') && !s.includes('starting')){ clearInterval(poll); }
+          const s = buildStatus.textContent;
+          if (!s.includes('building') && !s.includes('starting')) clearInterval(poll);
         }, 2000);
-      }catch(e){ document.getElementById('buildStatus').textContent = 'error'; }
-    });
+      }catch(e){ buildStatus.textContent = 'error'; }
+    }
 
-    // poll initial status
+    async function sendQuery(text){
+      if (!text || text.trim().length===0) return;
+      appendMessage(text, 'user');
+      inputEl.value = '';
+      const loadingEl = appendMessage('...', 'assistant');
+      opStatus.textContent = 'Querying...';
+      try{
+        const resp = await fetch('/query', {
+          method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ query: text })
+        });
+        if (!resp.ok){ const t = await resp.text(); loadingEl.textContent = 'Error: ' + t; opStatus.textContent = 'error'; return; }
+        const data = await resp.json();
+        loadingEl.textContent = data.answer;
+        opStatus.textContent = 'done';
+      }catch(e){ loadingEl.textContent = 'Error: ' + e.message; opStatus.textContent = 'error'; }
+    }
+
+    sendBtn.addEventListener('click', ()=> sendQuery(inputEl.value));
+    inputEl.addEventListener('keydown', (e)=>{ if (e.key === 'Enter') { e.preventDefault(); sendQuery(inputEl.value); } });
+    buildBtn.addEventListener('click', buildIndex);
+
+    // initial
     getStatus();
     setInterval(getStatus, 4000);
+    appendMessage('Welcome! Ask questions about the uploaded documents or your dataset.', 'assistant');
   </script>
 </body>
 </html>

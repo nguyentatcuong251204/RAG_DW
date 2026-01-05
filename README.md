@@ -1,51 +1,90 @@
-# RAG (Retrieval Augmented Generation) — Example OOP Project 🔧
+# Professional RAG System 🚀
 
-This repository contains a simple OOP-structured RAG implementation based on code from `use_model_huggingface.ipynb`.
+This repository implements a versatile **Retrieval-Augmented Generation (RAG)** system with dual-mode capabilities: **Vector Retrieval** (for unstructured documents) and **SQL Agency** (for structured data). Built with an Object-Oriented approach, it's designed for scalability and ease of integration.
 
-## Structure
+## 🌟 Key Features
 
-- `rag/` - package; contains modules:
-  - `loader.py` — PDF loading & chunking
-  - `embeddings.py` — embedding model wrapper
-  - `vectorstore.py` — FAISS wrapper
-  - `llm.py` — LLM wrapper using Hugging Face pipeline
-  - `rag.py` — high-level orchestrator that combines the pieces
-- `app.py` — CLI for building an index and asking questions
-- `requirements.txt` — Python packages used
+-   **Dual-Agent System**:
+    -   **Vector RAG**: Processes PDFs, chunks text, and uses FAISS for high-performance semantic search.
+    -   **SQL Agent**: Translates natural language questions into SQL queries to extract insights from SQLite databases.
+-   **Advanced LLM Integration**: Supports Hugging Face models (e.g., Qwen, Phi-2) with 4-bit quantization (NF4) for efficient local execution.
+-   **FastAPI Backend**: A robust API to serve queries, build indices, and manage models dynamically.
+-   **Modern Web UI**: A user-friendly interface for conversational interaction.
+-   **CLI Tooling**: Comprehensive command-line interface for indexing and querying.
 
-## Quickstart
+## 📂 Project Structure
 
-1. (Optional) Create and activate a virtualenv
-2. Install requirements: `pip install -r requirements.txt`
-3. Put PDFs in the `data/` folder
-4. Build the index:
+-   `rag/` - Core package:
+    -   `loader.py`: PDF document loading and intelligent chunking.
+    -   `embeddings.py`: Wrapper for Sentence Transformers/BGE embedding models.
+    -   `vectorstore.py`: FAISS-based vector database management.
+    -   `llm.py`: Unified interface for Large Language Models.
+    -   `rag.py`: Orchestrator for the Vector RAG workflow.
+    -   `agent.py`: LangChain-powered SQL Agent for structured data queries.
+    -   `api.py`: FastAPI implementation for web services.
+    -   `sql_db.py`: Utilities for managing and converting CSVs to SQLite.
+-   `app.py`: Main entry point for CLI operations.
+-   `web_ui/`: Frontend assets for the web interface.
+-   `data/`: Directory for source documents (PDFs, CSVs).
+-   `vectorstores/`: Persistent storage for FAISS indices.
 
+## 🚀 Quickstart
+
+### 1. Prerequisites
+Ensure you have Python 3.9+ installed. It is recommended to use a virtual environment:
+```powershell
+python -m venv .env
+.\.env\Scripts\Activate.ps1
+```
+
+### 2. Installation
+Install the necessary dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Usage via CLI
+
+#### Build Vector Index
+Place your PDFs in the `data/` folder and run:
 ```bash
 python app.py build-index data --vectorstore vectorstores
 ```
 
-5. Query the index:
-
+#### Build SQL Database
+Convert CSV data into a queryable SQLite database:
 ```bash
-python app.py query "What datasets are mentioned in the document?"
+python app.py build-sql-db data --db-path hospital.db
 ```
 
-## Notes
-- Change default model names in `app.py` or pass them on command line.
-- The code uses 4-bit NF4 quantization for the LLM by default; change in `LLMModel` if not needed.
+#### Querying
+The CLI defaults to the SQL agent if structured keywords are detected, or you can specify the agent:
+```bash
+# Ask about unstructured document content
+python app.py query "Summarize the findings in the documents" --agent-type rag
 
-## Web UI (FastAPI)
-You can run a small web server to interactively query the RAG model:
+# Ask about structured data (e.g., in hospital.db)
+python app.py query "How many patients were admitted in December?" --agent-type sql
+```
 
+## 🌐 Web Interface & API
+
+Start the FastAPI server to access the Web UI and API endpoints:
 ```bash
 uvicorn rag.api:app --reload --port 8000
 ```
+-   **Web UI**: Open `http://localhost:8000/ui/` in your browser.
+-   **API Health**: `GET /health`
+-   **Query Endpoint**: `POST /query` with payload `{ "query": "..." }`
 
-Serve the UI and API together. Run the server:
+## ⚙️ Configuration
 
-```bash
-uvicorn rag.api:app --reload --port 8000
-```
+-   **Models**: Default models are defined in `rag/api.py` and can be overridden via CLI arguments or API calls.
+-   **Quantization**: Enabled by default in `LLMModel` for GPU memory efficiency.
+-   **Language Support**: Pre-configured with models like `dangvantuan/vietnamese-embedding` for optimized Vietnamese support.
 
-Then open `http://localhost:8000/` in your browser to access the web UI. The UI will call `/build-index` to start an index build and POST to `/query` with JSON: `{ "query": "...", "k": 5 }` to get answers (response JSON contains `answer`).
+## 🛠️ Requirements
+-   `torch`, `transformers`, `bitsandbytes` (for LLM)
+-   `langchain`, `faiss-cpu`/`faiss-gpu` (for RAG)
+-   `fastapi`, `uvicorn` (for API)
 
